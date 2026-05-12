@@ -33,7 +33,12 @@ export function createGeminiQuestionGenerator(config: ServerConfig): QuestionGen
         if (!text) {
           throw ApiError.parse('AI response did not contain any text.');
         }
-        return parseQuestions(text);
+
+        const parsed = parseQuestions(text);
+        if (!parsed.valid) {
+          throw ApiError.validation(parsed.reason);
+        }
+        return parsed.questions;
       } catch (err) {
         throw mapGeminiError(err);
       }

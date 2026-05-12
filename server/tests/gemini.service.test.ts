@@ -30,12 +30,26 @@ beforeEach(() => {
 });
 
 describe('createGeminiQuestionGenerator', () => {
-  it('returns parsed questions on success', async () => {
+  it('returns parsed questions on a valid response', async () => {
     generateContentMock.mockResolvedValueOnce({
-      text: JSON.stringify({ questions: ['A?', 'B?', 'C?'] }),
+      text: JSON.stringify({ valid: true, questions: ['A?', 'B?', 'C?'] }),
     });
     const gen = createGeminiQuestionGenerator(config);
     await expect(gen.generate('Backend Engineer')).resolves.toEqual(['A?', 'B?', 'C?']);
+  });
+
+  it('rejects with VALIDATION_ERROR when the model decides the input is not a job title', async () => {
+    generateContentMock.mockResolvedValueOnce({
+      text: JSON.stringify({
+        valid: false,
+        reason: "'asdf' does not look like a job title.",
+      }),
+    });
+    const gen = createGeminiQuestionGenerator(config);
+    await expect(gen.generate('asdf')).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: "'asdf' does not look like a job title.",
+    });
   });
 
   it('maps rate-limit-shaped errors to ApiError.rateLimited', async () => {
@@ -60,9 +74,10 @@ describe('createGeminiQuestionGenerator', () => {
 
   it('times out long-running upstream calls', async () => {
     generateContentMock.mockImplementationOnce(
-      () => new Promise(() => {
-        /* never resolves */
-      }),
+      () =>
+        new Promise(() => {
+          /* never resolves */
+        }),
     );
     const gen = createGeminiQuestionGenerator({ ...config, upstreamTimeoutMs: 50 });
     await expect(gen.generate('PM')).rejects.toMatchObject({ code: 'UPSTREAM_TIMEOUT' });
