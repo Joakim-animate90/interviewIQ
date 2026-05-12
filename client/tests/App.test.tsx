@@ -46,13 +46,11 @@ describe('<App />', () => {
   });
 
   it('shows loading state and then renders 3 questions on success', async () => {
-    let resolveCall: ((value: string[]) => void) | null = null;
-    generateQuestionsMock.mockImplementation(
-      () =>
-        new Promise<string[]>((resolve) => {
-          resolveCall = resolve;
-        }),
-    );
+    let resolveCall!: (value: string[]) => void;
+    const pending = new Promise<string[]>((resolve) => {
+      resolveCall = resolve;
+    });
+    generateQuestionsMock.mockImplementation(() => pending);
 
     const user = userEvent.setup();
     render(<App />);
@@ -63,7 +61,7 @@ describe('<App />', () => {
     expect(screen.getByRole('button', { name: /generating/i })).toBeDisabled();
     expect(screen.getByText(/thinking through backend engineer/i)).toBeInTheDocument();
 
-    resolveCall?.(['Q1?', 'Q2?', 'Q3?']);
+    resolveCall(['Q1?', 'Q2?', 'Q3?']);
 
     await waitFor(() => {
       expect(screen.getByText('Q1?')).toBeInTheDocument();
