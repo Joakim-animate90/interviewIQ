@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { config as dotenvConfig } from 'dotenv';
 
@@ -46,12 +45,11 @@ export function loadConfig(): ServerConfig {
 }
 
 function loadEnv(): void {
-  const here = path.dirname(fileURLToPath(import.meta.url));
   const candidates = [
     path.resolve(process.cwd(), '.env'),
-    path.resolve(here, '../.env'),
-    path.resolve(here, '../../.env'),
-    path.resolve(here, '../../../.env'),
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../../../.env'),
   ];
   for (const file of candidates) {
     if (existsSync(file)) {
